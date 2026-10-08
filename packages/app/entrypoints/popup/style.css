@@ -1,0 +1,14 @@
+/* popup 自己的宿主样式。
+ * 页面里的注入版本靠 --ksw-root 铺满视口当浮层，这里不需要那套，
+ * 只把弹窗尺寸定死，并让底色跟卡片保持一致，避免内容不满时下面露出一条白边。 */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 380px;
+  background: var(--ui-canvas);
+}
+
+#app {
+  width: 380px;
+}

@@ -1,0 +1,7 @@
+{
+  "LoggerSettings": {
+    "AppName": "KiriyamaShareBackend",
+    "WriteToFile": false,
+    "StructuredConsoleLogging": true
+  }
+}

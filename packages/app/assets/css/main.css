@@ -1,0 +1,189 @@
+@import 'tailwindcss';
+
+/*
+ * 暗色开关：<html> 上挂 .dark
+ * （生成的是 html.dark .shiki span { color: var(--shiki-dark) }）。
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ---------- 亮色（原样保留） ---------- */
+  --color-light-background: #fefef1; /* H≈60  暖米 */
+  --color-light-primary: #f0f0fe; /* H≈240 冷紫 */
+  --color-light-search: #d8c9b6; /* H≈33  暖褐 */
+  --color-light-secondary: #e0e0f0; /* H≈240 冷紫 */
+  --color-light-font: #6e6e70;
+  --color-light-font-p: #212122;
+  --color-light-font-h: #000000;
+  --color-light-button: #d6d8b7; /* H≈64  橄榄 */
+  --color-light-button-hover: #969780; /* H≈60  橄榄 */
+  --color-light-accent: #7d8065; /* H≈67  橄榄 */
+  --color-light-link: #3b6bd6; /* H≈221 蓝 */
+  --color-light-wrong: #e5484d; /* 搜索无结果的告警红 */
+
+  /* TypeDropdown / 筛选栏 */
+  --color-light-menu: #f7f5e6;
+  --color-light-menu-hover: #ebe9d6;
+  --color-light-menu-border: #e0ddc4;
+
+  /* ---------- 暗色：同色相 · 翻明度 · 降纯度 ---------- */
+  --color-dark-background: #1b1a13; /* H≈53  暖米压到 L≈9% */
+  --color-dark-primary: #24242f; /* H≈240 互补冷紫 */
+  --color-dark-search: #3b332a; /* H≈32  暖褐 */
+  --color-dark-secondary: #38384a; /* H≈240 分隔线 */
+  --color-dark-font: #9b9ba8;
+  --color-dark-font-p: #e3e3ea;
+  --color-dark-font-h: #fdfdf7; /* 略带米色，呼应暖黄主族 */
+  --color-dark-button: #34372a; /* H≈70  橄榄 */
+  --color-dark-button-hover: #4f5340; /* 暗色里 hover 要更亮 */
+  --color-dark-accent: #b3b98f; /* 橄榄提亮，暗底才读得清 */
+  --color-dark-link: #8faaf0;
+  --color-dark-wrong: #ff7b81;
+
+  --color-dark-menu: #24231a;
+  --color-dark-menu-hover: #302f23;
+  --color-dark-menu-border: #3f3d2c;
+
+  /* 代码块：配色 token 用 github-dark，底色跟着走同一个亮度区间 */
+  --color-dark-code-bg: #1f1f29;
+  --color-dark-code-inline-bg: #2a2a3a;
+  --color-dark-code-inline-text: #f0a0bc;
+
+  --text-h1: 2.5rem;
+  --text-h2: 2rem;
+  --text-p: 1rem;
+}
+
+/* 必须是 `:root, :host`，不能只写 `:root`。
+ *
+ * content script 的样式是注入到 Shadow Root 里的（cssInjectionMode: 'ui'），
+ * 而 `:root` 在 shadow tree 里匹配不到任何元素 —— 于是这一整块 --ui-* 全部失效，
+ * 注入到页面上的控件会变成「透明背景 + 黑字黑边」，只有 .dark 那份还能生效。
+ * `:host` 在普通文档里匹配不到东西，加进来不影响 popup 等非 shadow 场景。
+ * （Tailwind 自己的主题块也是这么写的：`:root,:host`。） */
+:root,
+:host {
+  /*
+   * 浮动按钮那一行的上边距：默认和 FloatingMenu 的 p-4 对齐。
+   * 首页顶部有一条固定筛选条(#filter-bar)，那里把它推开，别让搜索框压住按钮
+   * （组件侧只写 top: var(--floating-top)，不需要 :has / :global 那些写法）。
+   */
+  --floating-top: 1rem;
+
+  --ui-canvas: #fefef1;
+  --ui-surface: #f0f0fe;
+  --ui-line: #e0e0f0;
+  --ui-text: #212122;
+  --ui-text-strong: #000000;
+  --ui-text-muted: #6e6e70;
+  --ui-accent: #7d8065;
+  --ui-link: #3b6bd6;
+  --ui-wrong: #e5484d;
+  --ui-placeholder: #6e6e70;
+  /* 固定筛选条的半透明底（首页 .filter-bar） */
+  --ui-backdrop: rgb(254 254 241 / 0.72);
+  /* 轻提示：亮色下用深底浅字 */
+  --ui-toast-bg: #212122;
+  --ui-toast-text: #fefef1;
+  --ui-alert-bg: #ffffff;
+  --ui-spin-track: #e0e0f0;
+  --ui-spin-head: #969780;
+  --ui-rail-track: #0f1522;
+  --ui-rail-thumb: #c8ee8c9f;
+}
+
+/* 首页：固定筛选条高 4rem（+1.25rem 渐隐），浮动按钮那一行整体让到它下面 */
+body:has(.filter-bar) {
+  --floating-top: 4.75rem;
+}
+
+.dark {
+  --ui-canvas: #1b1a13;
+  --ui-surface: #24242f;
+  --ui-line: #38384a;
+  --ui-text: #e3e3ea;
+  --ui-text-strong: #fdfdf7;
+  --ui-text-muted: #9b9ba8;
+  --ui-accent: #b3b98f;
+  --ui-link: #8faaf0;
+  --ui-wrong: #ff7b81;
+  --ui-placeholder: #9b9ba8;
+  --ui-backdrop: rgb(27 26 19 / 0.72);
+  /* 暗色下反过来：浅底深字，在深页面上更跳 */
+  --ui-toast-bg: #e3e3ea;
+  --ui-toast-text: #1b1a13;
+  --ui-alert-bg: #24242f;
+  --ui-spin-track: #38384a;
+  --ui-spin-head: #b3b98f;
+  --ui-rail-track: #4b4b60;
+  --ui-rail-thumb: #c8ee8ccc;
+}
+
+@layer utilities {
+  .text-h1 {
+    font-size: var(--text-h1);
+  }
+  .text-h2 {
+    font-size: var(--text-h2);
+  }
+  .text-p {
+    font-size: var(--text-p);
+  }
+}
+
+@layer base {
+  /* 让原生控件（搜索框、滚动条、选区）跟着主题走 */
+  :root,
+  :host {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply transition-all px-4 py-2 bg-light-button text-light-font rounded-2xl hover:bg-light-button-hover hover:cursor-pointer;
+  }
+  /* 用到 .btn 的地方很多，暗色统一在这里换，别散到每个组件 */
+  .dark .btn {
+    @apply bg-dark-button text-dark-font;
+  }
+  .dark .btn:hover {
+    @apply bg-dark-button-hover text-dark-font-h;
+  }
+
+  .container {
+    @apply transition-all max-w-7xl mx-auto px-4;
+  }
+
+  .card {
+    @apply transition-all p-4 mt-2 mb-2 hover:cursor-pointer;
+    > h2 {
+      @apply text-light-font-h text-h2 font-extrabold text-lg;
+    }
+    > p {
+      @apply text-light-font-p text-p text-balance text-pretty;
+    }
+  }
+  .dark .card {
+    > h2 {
+      @apply text-dark-font-h;
+    }
+    > p {
+      @apply text-dark-font-p;
+    }
+  }
+
+  .right-tab {
+    @apply transition-all relative right-0 top-1/2 -translate-y-1/2;
+  }
+
+  .doc-link {
+    @apply transition-all hidden md:block text-light-font-p hover:text-light-font-h;
+  }
+  .dark .doc-link {
+    @apply text-dark-font-p hover:text-dark-font-h;
+  }
+}

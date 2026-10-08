@@ -1,0 +1,458 @@
+/* ============================================================================
+ * KiriyamaShare · 注入式悬浮窗样式
+ *
+ * 这份 CSS 只在 content script 的 Shadow Root 内生效（cssInjectionMode: 'ui'），
+ * 不会污染宿主页面，宿主页面的样式也进不来。
+ *
+ * 两条硬约束：
+ *   1. 只用 px，不用 rem —— Shadow Root 里 rem 依然按宿主 <html> 的 font-size
+ *      计算，宿主页面如果改过根字号，整个组件就会被带偏。
+ *   2. 组件级类（.ksw-*）放在 @layer components 里 —— 这样模板上的 Tailwind
+ *      utility 仍然能覆盖它们；不加 layer 的裸 CSS 优先级永远高于 utility，
+ *      会变成调不动。
+ * ==========================================================================*/
+
+@layer base {
+  /* 悬浮层根节点：铺满视口但默认不吃事件，只有卡片自身可点 */
+  .ksw-root {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    pointer-events: none;
+    font-family:
+      system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+      'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-align: left;
+    direction: ltr;
+    color: var(--ui-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* 主题在亮/暗两边各派生的组件私有变量 */
+    --ksw-accent: var(--ui-accent);
+    --ksw-accent-fg: #ffffff;
+    --ksw-accent-soft: rgb(125 128 101 / 0.14);
+    --ksw-shadow: 0 18px 48px -14px rgb(15 21 34 / 0.32), 0 2px 8px -2px rgb(15 21 34 / 0.14);
+    --ksw-offset: 18px;
+  }
+
+  .ksw-root.dark {
+    --ksw-accent-fg: #1b1a13;
+    --ksw-accent-soft: rgb(179 185 143 / 0.18);
+    --ksw-shadow: 0 20px 54px -14px rgb(0 0 0 / 0.72), 0 2px 8px -2px rgb(0 0 0 / 0.5);
+  }
+
+  /* 独立页面（popup 等）用：还是这颗根节点，只是不再铺满视口当浮层，
+   * 这样字体、重置、--ksw-* 变量、dark 变体全都能原样复用。 */
+  .ksw-root--page {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    width: 100%;
+    pointer-events: auto;
+    background: var(--ui-canvas);
+  }
+
+  .ksw-root *,
+  .ksw-root *::before,
+  .ksw-root *::after {
+    box-sizing: border-box;
+  }
+
+  /* 宿主页面的按钮/输入框样式不能漏进来 */
+  .ksw-root button,
+  .ksw-root input,
+  .ksw-root select,
+  .ksw-root textarea {
+    font: inherit;
+    color: inherit;
+    margin: 0;
+    border: 0;
+    background: none;
+    appearance: none;
+  }
+
+  .ksw-root button {
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .ksw-root p {
+    margin: 0;
+  }
+
+  .ksw-root:focus-visible,
+  .ksw-root button:focus-visible,
+  .ksw-root input:focus-visible {
+    outline: 2px solid var(--ksw-accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- 图标：尺寸交给外层 span，描边用 CSS 覆盖 SVG 的 presentation 属性 ---------- */
+  /* display 必须写死。span 默认是 inline，而 inline 元素会忽略 width/height，
+   * 于是 SvgIcon 上按 size 设的行内尺寸整个失效，里层 svg 的 100% 会改按"最近的
+   * 块级祖先"计算——一个 15px 的图标被撑成整张卡片的宽度，layout 全被顶歪。 */
+  .ksw-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    vertical-align: middle;
+  }
+
+  .ksw-icon > svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    stroke-width: var(--icon-stroke, 2);
+  }
+
+  .ksw-icon--spin > svg {
+    animation: ksw-spin 0.9s linear infinite;
+  }
+
+  /* ---------- 滚动区域：细滚动条，跟随主题 ---------- */
+  .ksw-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ui-rail-thumb) var(--ui-rail-track);
+  }
+
+  .ksw-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .ksw-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ksw-scroll::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+    background-color: var(--ui-rail-thumb);
+  }
+}
+
+@layer components {
+  /* ---------- 按钮 ---------- */
+  .ksw-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--ui-line);
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition:
+      background-color 0.16s ease,
+      border-color 0.16s ease,
+      color 0.16s ease,
+      transform 0.16s ease;
+  }
+
+  .ksw-btn:hover:not(:disabled) {
+    border-color: var(--ksw-accent);
+    color: var(--ui-text-strong);
+  }
+
+  .ksw-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .ksw-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .ksw-btn--primary {
+    border-color: transparent;
+    background: var(--ksw-accent);
+    color: var(--ksw-accent-fg);
+  }
+
+  .ksw-btn--primary:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--ksw-accent);
+    color: var(--ksw-accent-fg);
+    filter: brightness(1.06);
+  }
+
+  .ksw-btn--ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--ui-text-muted);
+  }
+
+  .ksw-btn--ghost:hover:not(:disabled) {
+    border-color: transparent;
+    background: var(--ksw-accent-soft);
+    color: var(--ui-text-strong);
+  }
+
+  .ksw-btn--danger {
+    border-color: rgb(229 72 77 / 0.35);
+    background: transparent;
+    color: var(--ui-wrong);
+  }
+
+  .ksw-btn--danger:hover:not(:disabled) {
+    border-color: var(--ui-wrong);
+    background: rgb(229 72 77 / 0.1);
+    color: var(--ui-wrong);
+  }
+
+  /* 方形图标按钮（卡片右上角关闭等） */
+  .ksw-iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    color: var(--ui-text-muted);
+    transition:
+      background-color 0.16s ease,
+      color 0.16s ease;
+  }
+
+  .ksw-iconbtn:hover {
+    background: var(--ksw-accent-soft);
+    color: var(--ui-text-strong);
+  }
+
+  /* ---------- 卡片 ---------- */
+  .ksw-card {
+    position: absolute;
+    right: var(--ksw-offset);
+    bottom: var(--ksw-offset);
+    display: flex;
+    flex-direction: column;
+    width: 380px;
+    max-height: min(560px, calc(100vh - var(--ksw-offset) * 2 - 16px));
+    pointer-events: auto;
+    overflow: hidden;
+    border: 1px solid var(--ui-line);
+    border-radius: 16px;
+    background: var(--ui-canvas);
+    color: var(--ui-text);
+    box-shadow: var(--ksw-shadow);
+  }
+
+  /* 同一张卡片放进独立页面时走正常文档流：撑满宽度，去掉浮层的边、圆角与投影 */
+  .ksw-card--page {
+    position: static;
+    width: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* 分组小标题 */
+  .ksw-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ui-text-muted);
+  }
+
+  /* 设置/列表里的一行 */
+  .ksw-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    transition: background-color 0.16s ease;
+  }
+
+  .ksw-row:hover {
+    background: var(--ksw-accent-soft);
+  }
+
+  /* 输入框 */
+  .ksw-input {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--ui-line);
+    border-radius: 9px;
+    background: var(--ui-surface);
+    color: var(--ui-text);
+    font-size: 12px;
+    transition: border-color 0.16s ease;
+  }
+
+  .ksw-input::placeholder {
+    color: var(--ui-placeholder);
+  }
+
+  .ksw-input:focus {
+    border-color: var(--ksw-accent);
+    outline: none;
+  }
+
+  /* 纯展示用的等宽小标签（共享码、延迟、URL） */
+  .ksw-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-line);
+    color: var(--ui-text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ksw-mono {
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+  }
+
+  /* ---------- 开关 ---------- */
+  .ksw-switch {
+    position: relative;
+    flex: none;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    border: 1px solid var(--ui-line);
+    background: var(--ui-surface);
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .ksw-switch--on {
+    border-color: transparent;
+    background: var(--ksw-accent);
+  }
+
+  .ksw-switch:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .ksw-switch__knob {
+    position: absolute;
+    top: 50%;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: var(--ui-canvas);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+    transform: translateY(-50%);
+    transition: transform 0.18s cubic-bezier(0.34, 1.3, 0.64, 1);
+  }
+
+  .ksw-switch--on .ksw-switch__knob {
+    transform: translate(16px, -50%);
+    background: var(--ksw-accent-fg);
+  }
+
+  /* ---------- Tab ---------- */
+  /* 指示条是 absolute，必须有一个定位祖先把它框住。
+   * 这条写进 CSS 而不是只靠模板上的 `relative` utility —— 一旦 utility 没生成，
+   * 指示条会直接逃到视口左上角，糊在头部上（这个坑真踩过一次）。 */
+  .ksw-tabs {
+    position: relative;
+  }
+
+  .ksw-tab {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1 1 0;
+    height: 46px;
+    padding: 0 4px;
+    border-radius: 9px;
+    color: var(--ui-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    transition: color 0.18s ease;
+    z-index: 1;
+  }
+
+  .ksw-tab:hover {
+    color: var(--ui-text);
+  }
+
+  .ksw-tab--active {
+    color: var(--ksw-accent-fg);
+  }
+
+  /* 会跟着选中项滑过去的指示条 */
+  .ksw-tab-indicator {
+    position: absolute;
+    top: 0;
+    height: 46px;
+    border-radius: 9px;
+    background: var(--ksw-accent);
+    transition:
+      transform 0.28s cubic-bezier(0.32, 1.2, 0.48, 1),
+      width 0.28s cubic-bezier(0.32, 1.2, 0.48, 1),
+      opacity 0.2s ease;
+  }
+
+  .ksw-tab-indicator--hidden {
+    opacity: 0;
+  }
+}
+
+/* ---------- 动画 ---------- */
+@keyframes ksw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ksw-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Vue <Transition name="ksw-card"> 的进出场 */
+.ksw-card-enter-active {
+  animation: ksw-pop 0.24s cubic-bezier(0.22, 1.1, 0.36, 1) both;
+}
+
+.ksw-card-leave-active {
+  animation: ksw-pop 0.16s ease-in reverse both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ksw-root *,
+  .ksw-root *::before,
+  .ksw-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,5 @@
+packages:
+  # 所有放在 packages 下的子包
+  - 'packages/*'
+allowBuilds:
+  esbuild: set this to true or false

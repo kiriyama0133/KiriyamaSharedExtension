@@ -1,0 +1,26 @@
+{
+  "name": "SharedExtension",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm --filter app dev",
+    "dev:firefox": "pnpm --filter app dev:firefox",
+    "build": "pnpm --filter app build",
+    "build:firefox": "pnpm --filter app build:firefox",
+    "zip": "pnpm --filter app zip",
+    "zip:firefox": "pnpm --filter app zip:firefox",
+    "compile": "pnpm --filter app compile"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.18.0",
+      "onFail": "download"
+    }
+  },
+  "type": "module"
+}

@@ -1,0 +1,36 @@
+{
+  // 共享服务（KiriyamaShare 扩展的房间中转）
+  "share": {
+    "enabled": true,
+    // 房间号长度。用户要手抄，6 位是个折中：32^6 的空间 + 肉眼可读
+    "roomCodeLength": 6,
+    // 匿名连接也能建房，必须有个上限兜住内存
+    "maxRooms": 500,
+    "maxSubscriptionsPerConnection": 20,
+    // 单个 patch 的操作条数上限，超出丢弃（客户端侧也有熔断）
+    "maxOpsPerPatch": 500,
+    // 单个属性值 / 文本最大长度，超出截断
+    "maxValueLength": 4096,
+    // 一条 insert 最多带多少个节点，超出的不插
+    "maxInsertNodes": 2000,
+    // 整页基线最多多少个节点，超出裁剪并在 truncated 上标出来
+    "maxSnapshotNodes": 20000,
+    // 整页基线的文本 / 属性字符预算，超出裁剪。只有节点数上限挡不住"两万个各挂 4K 文本的节点"
+    "maxSnapshotChars": 1500000,
+    // SignalR 单条消息接收上限（字节）。基线走结构化节点树而不是 HTML 字符串，
+    // 每个节点要带 id / type / tagName / attributes 几个键。关键是把它对齐到
+    // maxSnapshotChars 的**最坏情况**（中文一个字 3 字节）：
+    //   1500000 字符 × 3 字节 = 4.5MB，加两万节点的结构开销约 1MB，再加属性标点，
+    // 取 8MiB 留余量。设小了的话服务端会宣告"收得下"而传输层运不过来 ——
+    // 消息超限时 SignalR 直接 abort 连接，房主只拿到一条 HubException，
+    // 表现出来就是"房间刚建好又马上没了"。
+    "maximumReceiveMessageSize": 8388608,
+    // 单条 Hub 消息允许的最大 JSON 嵌套层数。System.Text.Json 默认 64，
+    // 而基线是节点树：每层 DOM 要花两层 JSON（childNodes 数组 + 节点对象），
+    // 加上信封的 4 层，64 层只够约 30 层 DOM 深 —— 真实页面（尤其脚本渲染完的）
+    // 随便就超。超了 ParseMessage 会解析失败，SignalR 不是拒收而是**abort 连接**，
+    // 房间跟着连接一起没了，日志里只剩一句 "Error reading JSON"。
+    // 512 层 ≈ 254 层 DOM，远超真实页面，同时仍是个有限数。
+    "maxJsonDepth": 512
+  }
+}

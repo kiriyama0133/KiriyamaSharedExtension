@@ -1,0 +1,12 @@
+{
+  "CorsSettings": {
+    "Angular": "http://localhost:4200",
+    "Blazor": "https://localhost:5002;https://www.mydomain.my",
+    "React": "http://localhost:3000",
+    // KiriyamaShare 扩展的 SignalR 连接建在后台页（MV3 service worker）里，
+    // 它发出的协商请求带的是扩展自己的 origin，会被上面那三个来源的名单拦掉。
+    // 开发期扩展 id 会随加载路径变化，所以按 scheme 前缀放行；
+    // 打包上线、id 固定之后，改成完整的 chrome-extension://<id> 即可（判断逻辑不用动）。
+    "ExtensionOriginPrefixes": "chrome-extension://;moz-extension://"
+  }
+}

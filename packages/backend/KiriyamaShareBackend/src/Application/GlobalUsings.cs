@@ -1,0 +1,16 @@
+global using Ardalis.Specification;
+global using FluentValidation;
+global using KiriyamaShareBackend.Application.Common.Events;
+global using KiriyamaShareBackend.Application.Common.Exceptions;
+global using KiriyamaShareBackend.Application.Common.FileStorage;
+global using KiriyamaShareBackend.Application.Common.Interfaces;
+global using KiriyamaShareBackend.Application.Common.Models;
+global using KiriyamaShareBackend.Application.Common.Persistence;
+global using KiriyamaShareBackend.Application.Common.Specification;
+global using KiriyamaShareBackend.Application.Common.Validation;
+global using KiriyamaShareBackend.Domain.Common;
+global using KiriyamaShareBackend.Domain.Common.Contracts;
+global using KiriyamaShareBackend.Shared.Notifications;
+global using MediatR;
+global using Microsoft.Extensions.Localization;
+global using Microsoft.Extensions.Logging;

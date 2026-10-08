@@ -1,0 +1,10 @@
+{
+  "DatabaseSettings": {
+    "DBProvider": "mssql",
+    "ConnectionString": "Data Source=(localdb)\\mssqllocaldb;Initial Catalog=KiriyamaShareBackend;Integrated Security=True;MultipleActiveResultSets=True",
+    // 启动时是否自动建库 / 跑迁移。
+    // 共享服务是纯内存的（房间寿命 = 房主的连接），不碰数据库，所以默认关闭 ——
+    // 这样没有数据库也能把服务跑起来。要用认证（Identity 的 Users/Roles 表）时再打开。
+    "initializeOnStartup": false
+  }
+}

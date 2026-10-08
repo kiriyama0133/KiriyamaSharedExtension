@@ -1,0 +1,84 @@
+# ========== 依赖 ==========
+node_modules/
+.pnpm-store/
+
+# ========== 构建产物 ==========
+dist/
+build/
+.output/
+*.tsbuildinfo
+
+# ========== WXT ==========
+.wxt/
+stats.html
+web-ext-artifacts/
+
+# ========== 环境变量 ==========
+.env
+.env.local
+.env.*.local
+*.local
+
+# ========== 日志 ==========
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ========== .NET ==========
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ========== IDE / 编辑器 ==========
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ========== 操作系统 ==========
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ========== 缓存 ==========
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+
+# ========== 测试覆盖率 ==========
+coverage/
+.nyc_output/
+
+# ========== 临时文件 ==========
+*.tmp
+*.temp
+*.bak
+*.orig
+*.pid
+node_modules
